@@ -12,7 +12,7 @@ class Nominators:
         self.total_votes_percent = str(total_votes_percent)
         self.seats = str(seats)
 
-class ElectionComparison:
+class ElectionCompare:
     def __init__(self, election_event_name_abbreviation, advance_votes, advance_votes_percent,
                  election_day_votes, election_day_votes_percent,
                  total_votes, total_votes_percent,
