@@ -109,3 +109,36 @@ class BasicVotingDataSupplemental:
         self.calculation_status_percent_election_day_votes = str(calculation_status_percent_election_day_votes)
         self.calculation_status_percent = str(calculation_status_percent)
 
+class Area:
+    def __init__(self, abbreviation, name, number_of_polling_districts):
+        self.abbreviation = abbreviation
+        self.name = name
+        self.number_of_polling_districts = str(number_of_polling_districts)
+
+class Candidate:
+    def __init__(self, candidate_number, first_name, last_name, gender, age, occupation,
+                 home_municipality, language, advance_votes, election_day_votes, total_votes,
+                 advance_votes_percent, election_day_percent, total_vote_percent, elected_information,
+                 comparative_index, position, final_position):
+        self.candidate_number = candidate_number
+        self.first_name = first_name
+        self.last_name = last_name
+        self.gender = gender
+        self.age = age
+        self.occupation = occupation
+        self.home_municipality = home_municipality
+        self.language = language
+        self.advance_votes = advance_votes
+        self.election_day_votes = election_day_votes
+        self.total_votes = total_votes
+        self.advance_votes_percent = advance_votes_percent
+        self.election_day_percent = election_day_percent
+        self.total_vote_percent = total_vote_percent
+        self.elected_information = elected_information
+        self.comparative_index = comparative_index
+        self.position = position
+        self.final_position = final_position
+
+class CandidateCompare:
+    pass
+
