@@ -3,8 +3,11 @@
 """
 import pathlib
 import pprint as p
+from os import WCONTINUED
 
 from IPython.testing.tools import help_output_test
+from jaraco.functools import except_
+from jedi.inference.helpers import is_number
 
 import file_handling as handle
 import cls as c
@@ -262,32 +265,142 @@ def results(data_file):
     print(" - - - ")
 
 
-def candidates(data_file, areaIndex, communityIndex, partyIndex):
+def candidate_data(data_file, areaIndex, communityIndex, partyIndex, listing=True, candidateIndex=0):
+    def area(obj):
+        retval = []
+        for i in range(len(obj["election"]["electoral-area"])):
+            mainArea = c.Area(
+                obj["election"]["electoral-area"][i]["area-data"]["@abbreviation"],
+                obj["election"]["electoral-area"][i]["area-data"]["@name"],
+                obj["election"]["electoral-area"][i]["area-data"]["@number-of-polling-districts"])
+
+            retval.append(["Index: " + str(i) +
+                      " Alue: " + mainArea.name +
+                      " Lyhenne: " + mainArea.abbreviation +
+                      " Piirien määrä: " + mainArea.number_of_polling_districts])
+        return retval
+
+    def community(obj, areaIndex):
+        retval = []
+        for i in range(len(obj["election"]["electoral-area"][areaIndex]["electoral-area"])):
+            cityArea = c.Area(
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@abbreviation"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@name"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@number-of-polling-districts"])
+
+            retval.append(["Index: " + str(i) +
+                      " Alue: " + cityArea.name +
+                      " Lyhenne: " + cityArea.abbreviation +
+                      " Piirien määrä: " + cityArea.number_of_polling_districts])
+        return retval
+
+    def party(obj, areaIndex, communityIndex):
+        retval = []
+        for i in range(
+                len(obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"])):
+            retval.append(["Index: " + str(i) +
+                     " Puolue: " + obj["election"]["electoral-area"][areaIndex]
+                     ["electoral-area"][communityIndex]["nominator"][i]["@name"] +
+                     " Lyhenne: " + obj["election"]["electoral-area"][areaIndex]
+                     ["electoral-area"][communityIndex]["nominator"][i]["@abbreviation"]])
+        return retval
+
+    def candidates(obj, areaIndex, communityIndex, partyIndex):
+        retval = []
+
+        def candidate_add(obj, areaIndex, communityIndex, partyIndex, candi_index):
+        # Had to split info this way, cause KV- and AV-files here different ..
+            try:
+                candidate = c.Candidate(None, None, None, None, None,
+                                        None, None, None, None,
+                                        None, None, None,
+                                        None, None, None,
+                    obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
+                        "candidate"][candi_index]["@elected-information"],
+                    obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
+                        "candidate"][candi_index]["@position"],
+                    obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
+                        "candidate"][candi_index]["@final-position"])
+                return "Valinta: " + candidate.elected_information + " Sija: " + candidate.final_position
+            except KeyError:
+                return " Valinta: " + "no data" + " Sija: " + "no data"
+
+        for i in range(len(
+            obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                partyIndex]["candidate"])):
+            candidate = c.Candidate(
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@candidate-number"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@first-name"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@last-name"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@gender"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@age"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@occupation"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@home-municipality"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@language"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@advance-votes"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@election-day-votes"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@total-votes"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@advance-votes-percent"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@election-day-percent"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@total-vote-percent"],
+                obj["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][
+                    partyIndex][
+                    "candidate"][i]["@comparative-index"])
+
+            tmp = candidate_add(obj, areaIndex, communityIndex, partyIndex, i)
+            retval.append("Index: " + str(i) + " Numero: " + candidate.candidate_number + " Name: " + candidate.last_name +
+                     " " + candidate.first_name + " Ikä: " + candidate.age + " Ammatti: " + candidate.occupation +
+                     " Ennakkoäänet: " + candidate.advance_votes + ", " + candidate.advance_votes_percent + "%" +
+                     " Vaalipäivän äänet: " + candidate.election_day_votes + ", " + candidate.election_day_percent + "%" +
+                     " Yhteensä: " + candidate.total_votes + ", " + candidate.total_vote_percent + "%" +
+                     " Vertailuluku: " + candidate.comparative_index + tmp)
+
+        if (listing == False):
+            return retval[candidateIndex]
+        else:
+            return retval
+
+
     print(data_file)
     values = handle.getJSON(data_file)
     p.pprint(values["election"]["country-data"]["area-data"]["@number-of-polling-districts"])
     print("---")
     print("Hyvinvointialueet:")
-    for i in range(len(values["election"]["electoral-area"])):
-        mainArea = c.Area(
-            values["election"]["electoral-area"][i]["area-data"]["@abbreviation"],
-            values["election"]["electoral-area"][i]["area-data"]["@name"],
-            values["election"]["electoral-area"][i]["area-data"]["@number-of-polling-districts"])
-        p.pprint(["Index: " + str(i) + " Alue: " + mainArea.name + " Lyhenne: " + mainArea.abbreviation + " Piirien määrä: " + mainArea.number_of_polling_districts])
+    p.pprint(area(values))
     print("---")
     print(f"Valitun {(values["election"]["electoral-area"][areaIndex]["area-data"]["@name"])} hyvinvointialueen kunnat:")
-    for i in range(len(values["election"]["electoral-area"][areaIndex]["electoral-area"])):
-        cityArea = c.Area(
-            values["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@abbreviation"],
-            values["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@name"],
-            values["election"]["electoral-area"][areaIndex]["electoral-area"][i]["area-data"]["@number-of-polling-districts"])
-        p.pprint(["Index: " + str(i) + " Alue: " + cityArea.name + " Lyhenne: " + cityArea.abbreviation + " Piirien määrä: " + cityArea.number_of_polling_districts])
+    p.pprint(community(values,areaIndex))
     print("---")
     print("Puolueet:")
-    for i in range(len(values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"])):
-        p.pprint("Index: " + str(i) +
-                 " Puolue: " + values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][i]["@name"] +
-                 " Lyhenne: " + values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][i]["@abbreviation"])
+    p.pprint(party(values, areaIndex, communityIndex))
     print("---")
     print("Valittu kunta:")
     p.pprint(values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["area-data"]["@name"])
@@ -296,60 +409,11 @@ def candidates(data_file, areaIndex, communityIndex, partyIndex):
     print("Ehdokaslistan pituus:")
     p.pprint(len(values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex]["candidate"]))
     print("---")
-    """
-    p.pprint(values["election"]["electoral-area"][0]["electoral-area"][0]["nominator"][0].keys())
-        dict_keys(['@standard-party-number', '@nominator-number', '@party-identifier', '@name', '@name-in-swedish', '@name-in-english', '@abbreviation', '@abbreviation-in-swedish', '@abbreviation-in-english', '@lowest-candidate-number', '@highest-candidate-number', '@electoral-alliance-number', '@electoral-alliance-name', '@electoral-alliance-name-in-swedish', '@advance-votes', '@election-day-votes', '@total-votes', '@advance-votes-percent', '@election-day-votes-percent', '@total-votes-percent', '@seats', 'candidate'])
-    p.pprint(values["election"]["electoral-area"][0]["electoral-area"][0]["nominator"][0]["candidate"][0].keys())
-        dict_keys(['@candidate-number', '@first-name', '@last-name', '@gender', '@age', '@occupation', '@home-municipality-code', '@home-municipality', '@home-municipality-in-swedish', '@language', '@advance-votes', '@election-day-votes', '@total-votes', '@advance-votes-percent', '@election-day-percent', '@total-vote-percent', '@elected-information', '@comparative-index', '@position', '@final-position', 'comparison-election'])
+    print("Kandidaatit:")
+    p.pprint(candidates(values,areaIndex, communityIndex, partyIndex))
+    print("---")
 
-        22 = print(len(values["election"]["electoral-area"])) 
-        2 = p.pprint(len(values["election"]["electoral-area"][3]["electoral-area"]))
-    """
-    p.pprint(values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex]["candidate"][0].keys())
-    p.pprint(values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex]["candidate"][0]["@candidate-number"])
-    #    # dict_keys(  'comparison-election'])
 
-    candidateIndex = 0
-    candidate = c.Candidate(
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@candidate-number"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@first-name"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@last-name"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@gender"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@age"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@occupation"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@home-municipality"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@language"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@advance-votes"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@election-day-votes"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@total-votes"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@advance-votes-percent"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@election-day-percent"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@total-vote-percent"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@elected-information"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@comparative-index"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@position"],
-        values["election"]["electoral-area"][areaIndex]["electoral-area"][communityIndex]["nominator"][partyIndex][
-            "candidate"][candidateIndex]["@final-position"])
-
-    p.pprint(candidate.total_votes)
-    print(" - - - ")
 
 def run():
     print(list_data_files[1])
@@ -358,6 +422,16 @@ def run():
     #results(list_data_files[2])
     healthareaindex = 3  # VaKe
     communityindex = 1  # Vantaa, ja Kerava = 0
-    partyindex = 7 # Perussuomalaiset
 
-    candidates(list_data_files[4], healthareaindex, communityindex, partyindex)
+    """ 
+    # KV-file
+    partyindex = 7 # Perussuomalaiset
+    candidateindex = 64   
+    candidate_data(list_data_files[4], healthareaindex, communityindex, partyindex) # all
+    candidate_data(list_data_files[5], healthareaindex, communityindex, partyindex, False, candidateindex) # single candidate
+    """
+    # AV-file
+    partyindex = 12 # Perussuomalaiset
+    candidateindex = 17
+    #candidate_data(list_data_files[5], healthareaindex, communityindex, partyindex) # all
+    candidate_data(list_data_files[5], healthareaindex, communityindex, partyindex, False, candidateindex) # single candidate

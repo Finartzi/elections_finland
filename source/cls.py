@@ -118,26 +118,27 @@ class Area:
 class Candidate:
     def __init__(self, candidate_number, first_name, last_name, gender, age, occupation,
                  home_municipality, language, advance_votes, election_day_votes, total_votes,
-                 advance_votes_percent, election_day_percent, total_vote_percent, elected_information,
-                 comparative_index, position, final_position):
-        self.candidate_number = candidate_number
+                 advance_votes_percent, election_day_percent, total_vote_percent, comparative_index,
+                 elected_information="not available", position="not available", final_position="not available"):
+        self.candidate_number = str(candidate_number)
         self.first_name = first_name
         self.last_name = last_name
         self.gender = gender
-        self.age = age
+        self.age = str(age)
         self.occupation = occupation
         self.home_municipality = home_municipality
         self.language = language
-        self.advance_votes = advance_votes
-        self.election_day_votes = election_day_votes
-        self.total_votes = total_votes
-        self.advance_votes_percent = advance_votes_percent
-        self.election_day_percent = election_day_percent
-        self.total_vote_percent = total_vote_percent
-        self.elected_information = elected_information
-        self.comparative_index = comparative_index
-        self.position = position
-        self.final_position = final_position
+        self.advance_votes = str(advance_votes)
+        self.election_day_votes = str(election_day_votes)
+        self.total_votes = str(total_votes)
+        self.advance_votes_percent = str(advance_votes_percent)
+        self.election_day_percent = str(election_day_percent)
+        self.total_vote_percent = str(total_vote_percent)
+        self.comparative_index = str(comparative_index)
+        self.elected_information = str(elected_information)
+        self.position = str(position)
+        self.final_position = str(final_position)
+
 
 class CandidateCompare:
     pass
