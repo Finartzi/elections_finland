@@ -35,6 +35,5 @@ def getJSON(json_file):
             data = json.load(json_file)
             return data
 
-
     except FileNotFoundError:
         print("JSON-file not found")

@@ -110,6 +110,7 @@ class BasicVotingDataSupplemental:
         self.calculation_status_percent = str(calculation_status_percent)
 
 class Area:
+    # for districts as well
     def __init__(self, abbreviation, name, number_of_polling_districts):
         self.abbreviation = abbreviation
         self.name = name
@@ -139,7 +140,8 @@ class Candidate:
         self.position = str(position)
         self.final_position = str(final_position)
 
-
 class CandidateCompare:
-    pass
+    def __init__(self, election_event_name_abbreviation, total_votes):
+        self.election_event_name_abbreviation = election_event_name_abbreviation
+        self.total_votes = str(total_votes)
 
